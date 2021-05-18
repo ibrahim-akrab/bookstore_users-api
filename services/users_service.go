@@ -1,11 +1,19 @@
 package services
 
 import (
+	"net/http"
+
 	"github.com/ibrahim-akrab/bookstore_users-api/domain/users"
 	"github.com/ibrahim-akrab/bookstore_users-api/utils/errors"
 )
 
 func CreateUser(user users.User) (*users.User, *errors.RestErr) {
-	// TODO: implement user storage in database
+	err := user.Validate()
+	if err != nil {
+		return nil, &errors.RestErr{Message: "invalid user", Status: http.StatusBadRequest, Error: err}
+	}
+	if err := user.Save(); err != nil {
+		return nil, &errors.RestErr{Message: "couldnt save user in db"}
+	}
 	return &user, nil
 }
