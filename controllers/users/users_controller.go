@@ -25,7 +25,7 @@ func CreateUser(c *gin.Context) {
 	}
 	result, saveErr := services.CreateUser(user)
 	if saveErr != nil {
-		c.JSON(saveErr.Status, saveErr.Error.Error())
+		c.JSON(saveErr.Status, saveErr.Error)
 		return
 	}
 	fmt.Println(result)

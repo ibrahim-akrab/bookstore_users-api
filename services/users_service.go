@@ -13,7 +13,7 @@ func CreateUser(user users.User) (*users.User, *errors.RestErr) {
 		return nil, &errors.RestErr{Message: "invalid user", Status: http.StatusBadRequest, Error: err}
 	}
 	if err := user.Save(); err != nil {
-		return nil, &errors.RestErr{Message: "couldnt save user in db"}
+		return nil, err
 	}
 	return &user, nil
 }
