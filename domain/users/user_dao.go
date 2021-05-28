@@ -1,9 +1,9 @@
 package users
 
 import (
-	"net/http"
 	"strings"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/ibrahim-akrab/bookstore_users-api/datasources/mysql/users_db"
 	"github.com/ibrahim-akrab/bookstore_users-api/utils/date_utils"
 	"github.com/ibrahim-akrab/bookstore_users-api/utils/errors"
@@ -11,7 +11,9 @@ import (
 
 const (
 	indexUniqueEmail = "email_UNIQUE"
+	noRowsResult     = "no rows in result set"
 	queryInsertUser  = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?,?,?,?);"
+	queryGetUser     = "SELECT id, first_name, last_name, email, date_created FROM users where id = ?"
 )
 
 var (
@@ -49,14 +51,19 @@ func (user *User) Get() *errors.RestErr {
 	if err := users_db.Client.Ping(); err != nil {
 		panic(err)
 	}
-	result := usersDB[user.Id]
-	if result == nil {
-		return &errors.RestErr{Message: "user doesn't exists", Status: http.StatusBadRequest}
+	stmt, err := users_db.Client.Prepare(queryGetUser)
+	if err != nil {
+		return errors.NewInternalServerError(err)
 	}
-	user.FirstName = result.FirstName
-	user.LastName = result.LastName
-	user.Email = result.Email
-	user.DateCreated = result.DateCreated
+	defer stmt.Close()
 
+	result := stmt.QueryRow(user.Id)
+	if err := result.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.DateCreated); err != nil {
+		if strings.Contains(err.Error(), noRowsResult) {
+			return errors.NewBadRequestError(err)
+		}
+		mysql.MySQLError
+		return errors.NewInternalServerError(err)
+	}
 	return nil
 }
