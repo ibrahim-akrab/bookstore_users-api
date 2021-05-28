@@ -3,7 +3,6 @@ package users
 import (
 	"strings"
 
-	"github.com/go-sql-driver/mysql"
 	"github.com/ibrahim-akrab/bookstore_users-api/datasources/mysql/users_db"
 	"github.com/ibrahim-akrab/bookstore_users-api/utils/date_utils"
 	"github.com/ibrahim-akrab/bookstore_users-api/utils/errors"
@@ -62,7 +61,6 @@ func (user *User) Get() *errors.RestErr {
 		if strings.Contains(err.Error(), noRowsResult) {
 			return errors.NewBadRequestError(err)
 		}
-		mysql.MySQLError
 		return errors.NewInternalServerError(err)
 	}
 	return nil
