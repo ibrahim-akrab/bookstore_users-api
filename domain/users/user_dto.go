@@ -8,6 +8,8 @@ type User struct {
 	LastName    string `json:"last_name" validate:"required"`
 	Email       string `json:"email" validate:"required,email"`
 	DateCreated string `json:"date_created"`
+	Status      string `json:"status"`
+	Password    string `json:"password"`
 }
 
 func (user *User) Validate() error {
