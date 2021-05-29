@@ -11,7 +11,16 @@ import (
 	"github.com/ibrahim-akrab/bookstore_users-api/utils/errors"
 )
 
-func CreateUser(c *gin.Context) {
+func parseUserId(c *gin.Context) (int64, error) {
+	userId, err := strconv.ParseInt(c.Param("user_id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err)
+		return 0, err
+	}
+	return userId, nil
+}
+
+func Create(c *gin.Context) {
 	var user users.User
 	err := c.ShouldBindJSON(&user)
 	if err != nil {
@@ -33,17 +42,59 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, result)
 }
 
-func GetUser(c *gin.Context) {
-	userId, userErr := strconv.ParseInt(c.Param("user_id"), 10, 64)
+func Get(c *gin.Context) {
+	userId, userErr := parseUserId(c)
 	if userErr != nil {
-		c.JSON(http.StatusBadRequest, userErr)
 		return
 	}
-	user := &users.User{Id: userId}
-	err := user.Get()
+	user, err := services.GetUser(userId)
 	if err != nil {
-		c.JSON(err.Status, err.Error.Error())
+		c.JSON(err.Status, err.Error)
 		return
 	}
 	c.JSON(http.StatusOK, user)
+}
+
+func Update(c *gin.Context) {
+	userId, userErr := parseUserId(c)
+	if userErr != nil {
+		return
+	}
+
+	var user users.User
+	user.Id = userId
+	err := c.ShouldBindJSON(&user)
+	if err != nil {
+		restErr := errors.RestErr{
+			Message: "Error parsing json request",
+			Status:  http.StatusBadRequest,
+			Error:   err,
+		}
+		c.JSON(restErr.Status, restErr)
+		return
+	}
+
+	partialUpdate := c.Request.Method == http.MethodPut
+
+	result, restErr := services.UpdateUser(user, partialUpdate)
+
+	if restErr != nil {
+		c.JSON(restErr.Status, restErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func Delete(c *gin.Context) {
+	userId, userErr := parseUserId(c)
+	if userErr != nil {
+		return
+	}
+
+	if err := services.DeleteUser(userId); err != nil {
+		c.JSON(err.Status, err)
+		return
+	}
+	c.String(http.StatusOK, "deleted user successfully")
 }

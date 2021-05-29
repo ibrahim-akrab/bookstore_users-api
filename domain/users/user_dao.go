@@ -13,6 +13,8 @@ const (
 	noRowsResult     = "no rows in result set"
 	queryInsertUser  = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?,?,?,?);"
 	queryGetUser     = "SELECT id, first_name, last_name, email, date_created FROM users where id = ?"
+	queryUpdateUser  = "UPDATE users SET first_name=?, last_name=?, email=? WHERE id=?"
+	queryDeleteUser  = "DELETE FROM users WHERE id=?"
 )
 
 var (
@@ -47,9 +49,6 @@ func (user *User) Save() *errors.RestErr {
 
 // get a user from the database using primary key
 func (user *User) Get() *errors.RestErr {
-	if err := users_db.Client.Ping(); err != nil {
-		panic(err)
-	}
 	stmt, err := users_db.Client.Prepare(queryGetUser)
 	if err != nil {
 		return errors.NewInternalServerError(err)
@@ -63,5 +62,33 @@ func (user *User) Get() *errors.RestErr {
 		}
 		return errors.NewInternalServerError(err)
 	}
+	return nil
+}
+
+func (user *User) Update() *errors.RestErr {
+	stmt, err := users_db.Client.Prepare(queryUpdateUser)
+	if err != nil {
+		return errors.NewInternalServerError(err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(user.FirstName, user.LastName, user.Email, user.Id)
+	if err != nil {
+		return errors.NewInternalServerError(err)
+	}
+	return nil
+}
+
+func (user *User) Delete() *errors.RestErr {
+	stmt, err := users_db.Client.Prepare(queryDeleteUser)
+	if err != nil {
+		return errors.NewInternalServerError(err)
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(user.Id); err != nil {
+		return errors.NewInternalServerError(err)
+	}
+
 	return nil
 }
