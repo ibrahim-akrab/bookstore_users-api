@@ -8,7 +8,21 @@ import (
 	"github.com/ibrahim-akrab/bookstore_users-api/utils/errors"
 )
 
-func CreateUser(user users.User) (*users.User, *errors.RestErr) {
+var (
+	UsersService usersServiceInterface = &usersService{}
+)
+
+type usersService struct{}
+
+type usersServiceInterface interface {
+	CreateUser(user users.User) (*users.User, *errors.RestErr)
+	GetUser(userId int64) (*users.User, *errors.RestErr)
+	UpdateUser(user users.User, partialUpdate bool) (*users.User, *errors.RestErr)
+	DeleteUser(userId int64) *errors.RestErr
+	Search(status string) (*[]users.User, *errors.RestErr)
+}
+
+func (u *usersService) CreateUser(user users.User) (*users.User, *errors.RestErr) {
 	err := user.Validate()
 	if err != nil {
 		return nil, &errors.RestErr{Message: "invalid user", Status: http.StatusBadRequest, Error: err}
@@ -20,7 +34,7 @@ func CreateUser(user users.User) (*users.User, *errors.RestErr) {
 	return &user, nil
 }
 
-func GetUser(userId int64) (*users.User, *errors.RestErr) {
+func (u *usersService) GetUser(userId int64) (*users.User, *errors.RestErr) {
 	result := &users.User{Id: userId}
 	err := result.Get()
 	if err != nil {
@@ -29,8 +43,8 @@ func GetUser(userId int64) (*users.User, *errors.RestErr) {
 	return result, nil
 }
 
-func UpdateUser(user users.User, partialUpdate bool) (*users.User, *errors.RestErr) {
-	current, err := GetUser(user.Id)
+func (u *usersService) UpdateUser(user users.User, partialUpdate bool) (*users.User, *errors.RestErr) {
+	current, err := u.GetUser(user.Id)
 
 	if err != nil {
 		return nil, err
@@ -68,12 +82,12 @@ func UpdateUser(user users.User, partialUpdate bool) (*users.User, *errors.RestE
 	return current, nil
 }
 
-func DeleteUser(userId int64) *errors.RestErr {
+func (u *usersService) DeleteUser(userId int64) *errors.RestErr {
 	user := &users.User{Id: userId}
 	return user.Delete()
 }
 
-func Search(status string) (*[]users.User, *errors.RestErr) {
+func (u *usersService) Search(status string) (*[]users.User, *errors.RestErr) {
 	dao := &users.User{}
 	users, err := dao.FindByStatus(status)
 	if err != nil {
